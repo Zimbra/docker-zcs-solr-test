@@ -16,9 +16,9 @@ services:
     container_name: st-zimbra
     ports:
       - "7071:7071"
-      - "8143:143"
-      - "8443:443"
-      - "8993:993"
+      - "143:143"
+      - "443:443"
+      - "993:993"
   solr:
     image: zimbra/docker-zcs-solr-test-solr:20180116
     build:
