@@ -1,0 +1,22 @@
+# The following are used to do template substitution in the 
+# slash-zimbra/zimbra-config file prior to feeding it to
+# zmsetup.pl.  The first two are also used to configure bind.
+ZIMBRA_DEFAULT_DOMAIN=zcs-solr.test
+ZIMBRA_HOST_NAME=zimbra
+TIME_ZONE_ID=PDT
+ADMIN_PW=test123
+LDAP_ADMIN_PW=zimbra
+LDAP_AMAVIS_PW=zimbra
+LDAP_POSTFIX_PW=zimbra
+LDAP_REPLICATION_PW=zimbra
+LDAP_ROOT_PW=zimbra
+LDAP_BES_PW=zimbra
+LDAP_NGINX_PW=zimbra
+# SOLR config
+# Environment variables that control SOLR
+# SOLR_MODE cloud|standalone
+# SOLR_MEMORY <solr-memory-allocation-spec>
+SOLR_MODE=cloud
+SOLR_MEMORY=2g
+
+

@@ -1,0 +1,56 @@
+#!/bin/bash
+# Perform template substitution in /zimbra/zimbra-config then configure the system
+# Expects the following environment variables to be set:
+#   HOSTNAME (from specification in the docker-compose file; e.g., 'zimbra-1')
+#   ZIMBRA_DEFAULT_DOMAIN
+#   ZIMBRA_HOST_NAME
+#   TIME_ZONE_ID
+#   ADMIN_PW
+#   LDAP_ADMIN_PW
+#   LDAP_AMAVIS_PW
+#   LDAP_POSTFIX_PW
+#   LDAP_REPLICATION_PW
+#   LDAP_ROOT_PW
+#   LDAP_BES_PW
+#   LDAP_NGINX_PW
+
+SLEEP_SECS=10
+
+HOST_ADDRESS=$(grep "${HOSTNAME}" /etc/hosts | awk '{print $1}')
+HOST_CIDR=$(echo $HOST_ADDRESS | sed -e 's/[[:digit:]]*$/0/')
+
+sed -i.bak \
+-e "s/ZIMBRA_HOST_NAME/${ZIMBRA_HOST_NAME}/" \
+-e "s/ZIMBRA_DEFAULT_DOMAIN/${ZIMBRA_DEFAULT_DOMAIN}/" \
+-e "s/TIME_ZONE_ID/${TIME_ZONE_ID}/" \
+-e "s/LDAP_ADMIN_PW/${LDAP_ADMIN_PW}/" \
+-e "s/ADMIN_PW/${ADMIN_PW}/" \
+-e "s/LDAP_AMAVIS_PW/${LDAP_AMAVIS_PW}/" \
+-e "s/LDAP_POSTFIX_PW/${LDAP_POSTFIX_PW}/" \
+-e "s/LDAP_REPLICATION_PW/${LDAP_REPLICATION_PW}/" \
+-e "s/LDAP_ROOT_PW/${LDAP_ROOT_PW}/" \
+-e "s/LDAP_BES_PW/${LDAP_BES_PW}/" \
+-e "s/LDAP_NGINX_PW/${LDAP_NGINX_PW}/" \
+-e "s/HOST_ADDRESS/${HOST_ADDRESS}/" \
+-e "s/HOST_CIDR/${HOST_CIDR}/" \
+/zimbra/zimbra-config
+
+/opt/zimbra/libexec/zmsetup.pl -c /zimbra/zimbra-config
+
+echo "Enable local mail delivery"
+sudo -i -u zimbra zmprov mcf zimbraMtaLmtpHostLookup native
+echo "Updating zimbraSolrReplicationFactor"
+sudo -i -u zimbra /bin/bash -c "zmprov mcf zimbraSolrReplicationFactor 1"
+if [ "$SOLR_MODE" = "cloud" ]; then
+	echo "Updating zimbraIndexURL - cloud mode"
+	sudo -i -u zimbra /bin/bash -c "zmprov mcf zimbraIndexURL solrcloud:solr:9983"
+else
+	echo "Updating zimbraIndexURL - standalone mode"
+	sudo -i -u zimbra /bin/bash -c "zmprov mcf zimbraIndexURL solr:http://solr:8983/solr"
+fi
+echo "Restarting zimbra"
+sudo -i -u zimbra zmcontrol restart
+     
+echo "SETUP COMPLETE"
+/bin/sleep infinity
+

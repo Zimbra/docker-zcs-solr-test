@@ -1,0 +1,7 @@
+FROM zimbra/zm-solr-docker:latest
+USER root
+RUN mkdir -p /solr
+COPY solr/entrypoint /solr/entrypoint
+RUN chmod a+x /solr/entrypoint
+USER solr
+EXPOSE 8983 9983

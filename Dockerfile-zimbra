@@ -1,0 +1,45 @@
+FROM ubuntu:16.04
+
+# Install Basic Packages
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    dnsutils \
+    gettext \
+    linux-tools-common \
+    openssh-client \
+    netbase \
+    net-tools \
+    openjdk-8-jdk \
+    rsyslog \
+    software-properties-common \
+    vim \
+    wget && \
+    apt-get clean
+
+# ************************************************************************
+# Download and do a package-only install of Zimbra
+# Trick build into skipping resolvconf as docker overrides for DNS
+# This is currently required by our installer script. Hopefully be
+# fixed soon.  The `zimbra-os-requirements` packages depends
+# on the `resolvconf` package, and configuration of that is what
+# was breaking install.sh
+# ************************************************************************
+COPY ./slash-zimbra /zimbra
+RUN curl -s -k -o /tmp/zcs.tgz 'https://docker.zimbra.com.s3.amazonaws.com/solr/zcs-8.9.0_ALPHA_1000.UBUNTU16_64.20180116160958.tgz' && \
+    mkdir -p /tmp/release && \
+    tar xzvf /tmp/zcs.tgz -C /tmp/release --strip-components=1 && \
+    rm /tmp/zcs.tgz && \
+    echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections
+
+WORKDIR /tmp/release
+RUN sed -i.bak 's/checkRequired/# checkRequired/' install.sh && \
+    ./install.sh -s -x --skip-upgrade-check < /zimbra/software-install-responses && \
+    apt-get clean && \
+    rm -rf /tmp/release
+
+# Tweak amavisd conf so it doesn't require an fqdn
+RUN sed -i -e 's/\(^[$]myhostname = \)\(.\)@@/\1\2localhost\2; #/' /opt/zimbra/conf/amavisd.conf.in && \
+    sed -i.bck -e 's/RESTART antivirus amavis mta/RESTART antivirus/' /opt/zimbra/conf/zmconfigd.cf
+
+EXPOSE 22 25 80 110 143 443 465 587 993 995 6500 6550 7071 8443

@@ -1,0 +1,33 @@
+version: "3.3"
+
+services:
+  zimbra:
+    image: zimbra/docker-zcs-solr-test-zimbra:20180116
+    build:
+      context: .
+      dockerfile: Dockerfile-zimbra
+    depends_on:
+      - solr
+    entrypoint:
+      - /zimbra/init
+    env_file: .env
+    hostname: zimbra
+    domainname: ${ZIMBRA_DEFAULT_DOMAIN}
+    container_name: st-zimbra
+    ports:
+      - "7071:7071"
+      - "8143:143"
+      - "8443:443"
+      - "8993:993"
+  solr:
+    image: zimbra/docker-zcs-solr-test-solr:20180116
+    build:
+      context: .
+      dockerfile: Dockerfile-solr
+    env_file: .env
+    entrypoint: /solr/entrypoint
+    container_name: st-solr
+    ports:
+      - "8983:8983"
+      - "9983:9983"
+
