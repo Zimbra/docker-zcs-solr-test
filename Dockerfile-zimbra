@@ -25,15 +25,16 @@ RUN apt-get update && \
 # on the `resolvconf` package, and configuration of that is what
 # was breaking install.sh
 # ************************************************************************
-COPY ./slash-zimbra /zimbra
 RUN curl -s -k -o /tmp/zcs.tgz 'https://docker.zimbra.com.s3.amazonaws.com/solr/zcs-8.9.0_ALPHA_1000.UBUNTU16_64.20180116160958.tgz' && \
     mkdir -p /tmp/release && \
     tar xzvf /tmp/zcs.tgz -C /tmp/release --strip-components=1 && \
     rm /tmp/zcs.tgz && \
     echo "resolvconf resolvconf/linkify-resolvconf boolean false" | debconf-set-selections
 
+COPY ./slash-zimbra /zimbra
 WORKDIR /tmp/release
-RUN sed -i.bak 's/checkRequired/# checkRequired/' install.sh && \
+RUN chmod a+x /zimbra/init && \
+    sed -i.bak 's/checkRequired/# checkRequired/' install.sh && \
     ./install.sh -s -x --skip-upgrade-check < /zimbra/software-install-responses && \
     apt-get clean && \
     rm -rf /tmp/release
